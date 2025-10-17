@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MetaMask Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            color: #333;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f0f0f0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🦊 MetaMask Connection Test</h1>
+        
+        <div id="status">
+            <p>Checking MetaMask...</p>
+        </div>
+        
+        <button onclick="testConnection()">Test MetaMask Connection</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Check if MetaMask is installed
+        function checkMetaMask() {
+            const status = document.getElementById('status');
+            if (typeof window.ethereum !== 'undefined') {
+                status.innerHTML = '<p class="success">✅ MetaMask is installed!</p>';
+                return true;
+            } else {
+                status.innerHTML = '<p class="error">❌ MetaMask is NOT installed!<br><br>Install from: <a href="https://metamask.io/download/" target="_blank">https://metamask.io/download/</a></p>';
+                return false;
+            }
+        }
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            
+            if (!checkMetaMask()) {
+                return;
+            }
+
+            try {
+                resultDiv.innerHTML = '<p>Requesting connection...</p>';
+                
+                const accounts = await window.ethereum.request({ 
+                    method: 'eth_requestAccounts' 
+                });
+                
+                if (accounts && accounts.length > 0) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <h3>✅ Connection Successful!</h3>
+                            <p><strong>Address:</strong> ${accounts[0]}</p>
+                            <p>MetaMask is working correctly!</p>
+                            <br>
+                            <p>You can now go back to the main app:<br>
+                            <a href="/">Go to Trading App</a></p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h3>❌ No accounts found</h3>
+                            <p>Please create an account in MetaMask</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Connection error:', error);
+                let errorMessage = error.message || 'Unknown error';
+                
+                if (error.code === 4001) {
+                    errorMessage = 'You rejected the connection request. Please try again and click "Connect".';
+                } else if (error.code === -32002) {
+                    errorMessage = 'Connection request is already pending. Check your MetaMask extension.';
+                }
+                
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ Connection Failed</h3>
+                        <p><strong>Error:</strong> ${errorMessage}</p>
+                        <p><strong>Code:</strong> ${error.code || 'N/A'}</p>
+                        <br>
+                        <p><strong>Troubleshooting:</strong></p>
+                        <ul>
+                            <li>Make sure MetaMask is unlocked</li>
+                            <li>Check if you have any pending requests in MetaMask</li>
+                            <li>Try refreshing this page</li>
+                            <li>Try restarting your browser</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+
+        // Check on page load
+        window.addEventListener('load', () => {
+            checkMetaMask();
+        });
+    </script>
+</body>
+</html>
+

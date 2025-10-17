@@ -2,10 +2,6 @@
 node_modules/
 */node_modules/
 
-# Production build
-build/
-dist/
-
 # Environment variables
 .env
 .env.local
