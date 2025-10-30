@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import rateLimit from 'express-rate-limit';
+// import rateLimit from 'express-rate-limit';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import marketRoutes from './routes/market.js';
@@ -19,16 +19,16 @@ const PORT = process.env.PORT || 3001;
 // Path to frontend build directory
 const frontendBuildPath = join(__dirname, '..', '..', 'frontend', 'build');
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
-});
+// // Rate limiting
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 100 // limit each IP to 100 requests per windowMs
+// });
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(limiter);
+// app.use(limiter);
 
 // Routes
 app.use('/api/market', marketRoutes);
