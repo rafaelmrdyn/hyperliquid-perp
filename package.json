@@ -17,6 +17,9 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@nangohq/node-client": "^0.7.0",
+    "ethers": "^5.7.2"
   }
 }
-

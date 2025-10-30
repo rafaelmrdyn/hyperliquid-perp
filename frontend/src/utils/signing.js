@@ -1,12 +1,8 @@
-import { getSigner } from './wallet';
-import { Signature, verifyMessage, hexlify, toUtf8Bytes } from 'ethers';
-
 /**
- * Create a signed order for Hyperliquid
- * Uses simple message signing - Hyperliquid will verify the signature on their end
+ * Create an unsigned order for Hyperliquid
+ * Signing will happen on the backend with API wallet
  */
 export async function createSignedOrder({ 
-  address, 
   assetIndex, 
   isBuy, 
   size, 
@@ -14,8 +10,6 @@ export async function createSignedOrder({
   reduceOnly = false 
 }) {
   try {
-    const signer = await getSigner();
-    
     // Create the order action payload according to Hyperliquid spec
     const action = {
       type: 'order',
@@ -38,42 +32,17 @@ export async function createSignedOrder({
 
     const nonce = Date.now();
 
-    // Construct message for personal_sign: JSON.stringify(action) + nonce
-    const actionString = JSON.stringify(action);
-    const messageToSign = actionString + nonce.toString();
-    console.log('📝 personal_sign message (prefix):', messageToSign.slice(0, 120) + '...');
+    console.log('📦 Created unsigned order (backend will sign)');
+    console.log('   Action:', JSON.stringify(action).substring(0, 100) + '...');
+    console.log('   Nonce:', nonce);
     
-    // Get the signer's address to verify it matches
-    const signerAddress = await signer.getAddress();
-    console.log('🔍 Signer address from MetaMask:', signerAddress);
-    console.log('🔍 Expected address from props:', address);
-    console.log('🔍 Addresses match:', signerAddress.toLowerCase() === address.toLowerCase());
-    
-    // Sign with eth_sign (no EIP-191 prefix) to match Hyperliquid recovery
-    const messageHex = hexlify(toUtf8Bytes(messageToSign));
-    const signatureHex = await window.ethereum.request({
-      method: 'eth_sign',
-      params: [signerAddress, messageHex]
-    });
-    
-    console.log('✍️ Signature created (hex):', signatureHex);
-
-    // Parse into r,s,v object (expected by Hyperliquid)
-    const sig = Signature.from(signatureHex);
-    const signature = { r: sig.r.replace(/^0x/, ''), s: sig.s.replace(/^0x/, ''), v: sig.v };
-    console.log('📍 User address:', address);
-    console.log('📍 Signer address:', signerAddress);
-    
-    // Note: verifyMessage uses EIP-191 prefix; skip local verification for eth_sign
-    
-    // Include vaultAddress = user's main wallet (non-API wallet flow)
+    // Return unsigned order - backend will sign with API wallet
     return {
       action,
-      nonce,
-      signature
+      nonce
     };
   } catch (error) {
-    console.error('Error creating signed order:', error);
+    console.error('Error creating order:', error);
     throw error;
   }
 }

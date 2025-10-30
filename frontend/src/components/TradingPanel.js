@@ -70,9 +70,8 @@ function TradingPanel({ market, account }) {
       const formattedPrice = formatPrice(price, market.szDecimals);
       const formattedSize = formatSize(size, market.szDecimals);
 
-      // Create signed order
-      const signedOrder = await createSignedOrder({
-        address: account,
+      // Create unsigned order (backend will sign with API wallet)
+      const unsignedOrder = await createSignedOrder({
         assetIndex: market.index,
         isBuy: orderType === 'buy',
         size: formattedSize,
@@ -80,8 +79,8 @@ function TradingPanel({ market, account }) {
         reduceOnly: false
       });
 
-      // Place order through backend
-      const result = await placeOrder(signedOrder);
+      // Place order through backend (backend will sign it)
+      const result = await placeOrder(unsignedOrder);
       
       console.log('Order result:', result);
       

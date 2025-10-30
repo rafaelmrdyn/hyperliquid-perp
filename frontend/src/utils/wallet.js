@@ -1,20 +1,8 @@
-import { BrowserProvider } from 'ethers';
-
 /**
  * Check if MetaMask is installed
  */
 export function isMetaMaskInstalled() {
   return typeof window !== 'undefined' && typeof window.ethereum !== 'undefined';
-}
-
-/**
- * Get the Ethereum provider
- */
-export function getProvider() {
-  if (!isMetaMaskInstalled()) {
-    throw new Error('MetaMask is not installed. Please install MetaMask extension.');
-  }
-  return new BrowserProvider(window.ethereum);
 }
 
 /**
@@ -121,11 +109,4 @@ export async function getAccount() {
   }
 }
 
-/**
- * Get signer for signing transactions
- */
-export async function getSigner() {
-  const provider = getProvider();
-  return provider.getSigner();
-}
 
