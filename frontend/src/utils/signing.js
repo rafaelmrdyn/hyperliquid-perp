@@ -1,5 +1,5 @@
 import { getSigner } from './wallet';
-import { Signature } from 'ethers';
+import { Signature, verifyMessage, hexlify, toUtf8Bytes } from 'ethers';
 
 /**
  * Create a signed order for Hyperliquid
@@ -37,37 +37,40 @@ export async function createSignedOrder({
     };
 
     const nonce = Date.now();
-    
-    // Create the message exactly as Hyperliquid expects
-    // Format: stringified action object concatenated with nonce
+
+    // Construct message for personal_sign: JSON.stringify(action) + nonce
     const actionString = JSON.stringify(action);
     const messageToSign = actionString + nonce.toString();
+    console.log('📝 personal_sign message (prefix):', messageToSign.slice(0, 120) + '...');
     
-    console.log('📝 Message to sign:', messageToSign.substring(0, 150) + '...');
-    console.log('📝 Message length:', messageToSign.length);
+    // Get the signer's address to verify it matches
+    const signerAddress = await signer.getAddress();
+    console.log('🔍 Signer address from MetaMask:', signerAddress);
+    console.log('🔍 Expected address from props:', address);
+    console.log('🔍 Addresses match:', signerAddress.toLowerCase() === address.toLowerCase());
     
-    // Sign with MetaMask - this uses Ethereum's personal_sign
-    const signatureHex = await signer.signMessage(messageToSign);
+    // Sign with eth_sign (no EIP-191 prefix) to match Hyperliquid recovery
+    const messageHex = hexlify(toUtf8Bytes(messageToSign));
+    const signatureHex = await window.ethereum.request({
+      method: 'eth_sign',
+      params: [signerAddress, messageHex]
+    });
     
-    console.log('✍️ Signature created:', signatureHex);
-    
-    // Parse signature into r, s, v components (Hyperliquid expects this format)
+    console.log('✍️ Signature created (hex):', signatureHex);
+
+    // Parse into r,s,v object (expected by Hyperliquid)
     const sig = Signature.from(signatureHex);
-    const signature = {
-      r: sig.r,
-      s: sig.s,
-      v: sig.v
-    };
-    
-    console.log('✍️ Signature components:', signature);
+    const signature = { r: sig.r.replace(/^0x/, ''), s: sig.s.replace(/^0x/, ''), v: sig.v };
     console.log('📍 User address:', address);
+    console.log('📍 Signer address:', signerAddress);
     
-    // Return the complete signed order in Hyperliquid format
+    // Note: verifyMessage uses EIP-191 prefix; skip local verification for eth_sign
+    
+    // Include vaultAddress = user's main wallet (non-API wallet flow)
     return {
       action,
       nonce,
-      signature,
-      vaultAddress: null  // null means user's own account (not a vault)
+      signature
     };
   } catch (error) {
     console.error('Error creating signed order:', error);

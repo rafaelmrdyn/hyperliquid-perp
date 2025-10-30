@@ -7,7 +7,7 @@ const BASE_URL = process.env.HYPERLIQUID_API_URL || 'https://api.hyperliquid.xyz
  */
 export async function getMarketInfo() {
   try {
-    const res = await axios.post(`${BASE_URL}/info`, {
+    const res = await axios.post(`https://api.hyperliquid.xyz/info`, {
       type: 'metaAndAssetCtxs'
     });
     return res.data;
@@ -33,7 +33,8 @@ export async function placeOrder(signedOrder) {
     console.error('❌ Error placing order:', error.response?.data || error.message);
     if (error.response) {
       console.error('Response status:', error.response.status);
-      console.error('Response data:', error.response.data);
+      console.error('Response data:', JSON.stringify(error.response.data, null, 2));
+      console.error('Response headers:', error.response.headers);
     }
     throw error;
   }
