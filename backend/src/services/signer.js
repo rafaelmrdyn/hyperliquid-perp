@@ -1,35 +1,46 @@
 import { Hyperliquid } from 'hyperliquid';
 import { Wallet } from 'ethers';
+import { getApiWallet } from './apiWalletManager.js';
 
-let sdkInstance = null;
+const sdkInstances = new Map();
 
 /**
- * Get or create SDK instance with proper configuration
+ * Get or create SDK instance for a specific user's API wallet
  */
-function getSDK() {
-  if (!sdkInstance) {
-    const privateKey = process.env.API_WALLET_PRIVATE_KEY;
-    const vaultAddress = process.env.VAULT_ADDRESS;
-    
-    if (!privateKey || privateKey === 'YOUR_API_PRIVATE_KEY_HERE') {
-      throw new Error('API_WALLET_PRIVATE_KEY not configured');
-    }
-    
-    // Get API wallet address from private key
-    const apiWallet = new Wallet(privateKey);
-    
-    console.log('🔧 Initializing Hyperliquid SDK...');
-    console.log('   API Wallet:', apiWallet.address);
-    console.log('   Vault Address:', vaultAddress);
-    
-    sdkInstance = new Hyperliquid({
-      privateKey: privateKey,
-      walletAddress: apiWallet.address, // API wallet address
-      testnet: false, // mainnet
-      enableWs: false // disable WebSocket for now
-    });
+function getSDK(userAddress) {
+  if (sdkInstances.has(userAddress)) {
+    return sdkInstances.get(userAddress);
   }
-  return sdkInstance;
+  
+  // Get user's API wallet from storage
+  const apiWalletData = getApiWallet(userAddress);
+  
+  if (!apiWalletData) {
+    throw new Error(`No API wallet found for ${userAddress}. Please create one first.`);
+  }
+  
+  if (!apiWalletData.authorized) {
+    throw new Error(`API wallet not authorized for ${userAddress}. Please authorize it first.`);
+  }
+  
+  const privateKey = apiWalletData.apiWalletPrivateKey;
+  const apiWallet = new Wallet(privateKey);
+  const vaultAddress = apiWalletData.userAddress; // Main wallet address (registered on Hyperliquid)
+  
+  console.log('🔧 Initializing Hyperliquid SDK...');
+  console.log('   User (Vault):', vaultAddress);
+  console.log('   API Wallet (Agent):', apiWallet.address);
+  
+  // API wallet trades on behalf of the registered main wallet
+  const sdk = new Hyperliquid({
+    privateKey: privateKey,
+    walletAddress: vaultAddress, // Use main wallet as the trading account
+    testnet: false,
+    enableWs: false
+  });
+  
+  sdkInstances.set(userAddress, sdk);
+  return sdk;
 }
 
 /**
@@ -49,15 +60,13 @@ function convertOrderFormat(rawOrder, assetName) {
 /**
  * Place order using official Hyperliquid SDK
  */
-export async function signAndPlaceOrder(action, nonce) {
-  const vaultAddress = process.env.VAULT_ADDRESS;
-  
-  if (!vaultAddress) {
-    throw new Error('VAULT_ADDRESS not configured');
+export async function signAndPlaceOrder(userAddress, action, nonce) {
+  if (!userAddress) {
+    throw new Error('userAddress is required');
   }
 
   try {
-    const sdk = getSDK();
+    const sdk = getSDK(userAddress);
     
     console.log('📦 Received action:', JSON.stringify(action, null, 2));
     
@@ -105,13 +114,20 @@ export async function signAndPlaceOrder(action, nonce) {
     console.log(`📊 Price adjusted for tick size: ${rawOrder.p} → ${price}`);
     
     console.log('📤 Placing order via SDK:', JSON.stringify(sdkOrder, null, 2));
-    console.log('🏦 Vault address:', vaultAddress);
     
     // Place order using SDK (it will automatically format to correct decimals)
     // Don't pass vaultAddress - the SDK will use the wallet's own account
     const result = await sdk.exchange.placeOrder(sdkOrder);
     
-    console.log('✅ Order placed successfully!', JSON.stringify(result, null, 2));
+    console.log('📥 Hyperliquid response:', JSON.stringify(result, null, 2));
+    
+    // Check if the result indicates an error
+    if (result && result.status === 'err') {
+      console.error('❌ Order failed:', result.response);
+      throw new Error(result.response || 'Order placement failed');
+    }
+    
+    console.log('✅ Order placed successfully!');
     
     return result;
     

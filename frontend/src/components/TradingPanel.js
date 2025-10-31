@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './TradingPanel.css';
-import { createSignedOrder, formatPrice, formatSize } from '../utils/signing';
+import { formatPrice, formatSize } from '../utils/signing';
 import { placeOrder, getMarketInfo } from '../services/api';
 
 function TradingPanel({ market, account }) {
@@ -66,21 +66,42 @@ function TradingPanel({ market, account }) {
       setError(null);
       setSuccess(null);
 
+      console.log('🚀 Starting order placement...');
+      console.log('   Account:', account);
+      console.log('   Market:', market.name);
+      console.log('   Price:', price);
+      console.log('   Size:', size);
+
       // Format the values
       const formattedPrice = formatPrice(price, market.szDecimals);
       const formattedSize = formatSize(size, market.szDecimals);
 
-      // Create unsigned order (backend will sign with API wallet)
-      const unsignedOrder = await createSignedOrder({
-        assetIndex: market.index,
-        isBuy: orderType === 'buy',
-        size: formattedSize,
-        price: formattedPrice,
-        reduceOnly: false
-      });
+      console.log('📝 Formatted values:');
+      console.log('   Price:', formattedPrice);
+      console.log('   Size:', formattedSize);
 
-      // Place order through backend (backend will sign it)
-      const result = await placeOrder(unsignedOrder);
+      // Create order action
+      const action = {
+        type: 'order',
+        orders: [
+          {
+            a: market.index,
+            b: orderType === 'buy',
+            p: formattedPrice,
+            s: formattedSize,
+            r: false,
+            t: { limit: { tif: 'Gtc' } }
+          }
+        ],
+        grouping: 'na'
+      };
+
+      const nonce = Date.now();
+
+      console.log('📤 Sending order to backend (API wallet will sign)...');
+
+      // Backend will sign with API wallet and place order
+      const result = await placeOrder(account, action, nonce);
       
       console.log('Order result:', result);
       
@@ -198,7 +219,7 @@ function TradingPanel({ market, account }) {
       </form>
 
       <div className="trading-info">
-        <p>🔐 Orders are signed securely with your MetaMask wallet</p>
+        <p>🔐 Orders are signed automatically by your API wallet</p>
         <p>📊 Trading perpetual futures with limit orders (GTC)</p>
       </div>
     </div>

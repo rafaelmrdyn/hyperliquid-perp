@@ -17,14 +17,61 @@ export async function getMarketInfo() {
 }
 
 /**
- * Place an order through backend
+ * Place an order through backend using API wallet
  */
-export async function placeOrder(signedOrder) {
+export async function placeOrder(userAddress, action, nonce) {
   try {
-    const response = await axios.post(`${API_BASE_URL}/trading/order`, signedOrder);
+    const response = await axios.post(`${API_BASE_URL}/trading/order`, {
+      userAddress,
+      action,
+      nonce
+    });
     return response.data;
   } catch (error) {
     console.error('Error placing order:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if user has an API wallet
+ */
+export async function checkApiWallet(userAddress) {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/wallet/check/${userAddress}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error checking API wallet:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create a new API wallet for user
+ */
+export async function createApiWallet(userAddress) {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/wallet/create`, { userAddress });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating API wallet:', error);
+    throw error;
+  }
+}
+
+/**
+ * Authorize API wallet with signed data
+ */
+export async function authorizeApiWallet(userAddress, apiWalletAddress, signedAction) {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/wallet/authorize`, {
+      userAddress,
+      apiWalletAddress,
+      signedAction
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error authorizing API wallet:', error);
     throw error;
   }
 }

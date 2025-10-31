@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import marketRoutes from './routes/market.js';
 import tradingRoutes from './routes/trading.js';
+import apiWalletRoutes from './routes/apiWallet.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -33,6 +34,7 @@ app.use(express.json());
 // Routes
 app.use('/api/market', marketRoutes);
 app.use('/api/trading', tradingRoutes);
+app.use('/api/wallet', apiWalletRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

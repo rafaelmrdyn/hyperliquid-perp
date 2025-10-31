@@ -31,3 +31,7 @@ Thumbs.db
 .cache/
 coverage/
 
+# API Wallets (contains private keys)
+backend/api-wallets.json
+api-wallets.json
+

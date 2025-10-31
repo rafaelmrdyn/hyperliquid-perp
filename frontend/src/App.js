@@ -4,6 +4,7 @@ import { connectWallet, getAccount, isMetaMaskInstalled } from './utils/wallet';
 import { getMarketInfo } from './services/api';
 import TradingPanel from './components/TradingPanel';
 import MarketSelector from './components/MarketSelector';
+import ApiWalletSetup from './components/ApiWalletSetup';
 
 function App() {
   const [account, setAccount] = useState(null);
@@ -11,6 +12,7 @@ function App() {
   const [selectedMarket, setSelectedMarket] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [apiWalletReady, setApiWalletReady] = useState(false);
 
   useEffect(() => {
     // Check if already connected
@@ -94,6 +96,10 @@ function App() {
     }
   };
 
+  const handleApiWalletSetupComplete = () => {
+    setApiWalletReady(true);
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -132,7 +138,7 @@ function App() {
           <div className="trading-container">
             {loading && markets.length === 0 ? (
               <div className="loading">Loading markets...</div>
-            ) : (
+            ) : apiWalletReady ? (
               <>
                 <MarketSelector
                   markets={markets}
@@ -146,6 +152,11 @@ function App() {
                   />
                 )}
               </>
+            ) : (
+              <ApiWalletSetup 
+                account={account} 
+                onComplete={handleApiWalletSetupComplete}
+              />
             )}
           </div>
         )}
