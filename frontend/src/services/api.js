@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Use relative URL when served from Express, or localhost for development
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'https://hyperliquid-perp.onrender.com/api';
 
 /**
  * Get market information from backend
