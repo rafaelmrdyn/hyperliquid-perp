@@ -141,16 +141,27 @@ function ApiWalletSetup({ account, onComplete }) {
       }
     } catch (err) {
       console.error('Error authorizing API wallet:', err);
+      console.error('Error response:', err.response);
+      console.error('Error response data:', err.response?.data);
       
-      // User-friendly error messages
+      // Extract error message from backend response
       let errorMsg = 'Failed to authorize API wallet';
-      if (err.message?.includes('rejected')) {
+      
+      if (err.response?.data) {
+        // Try different possible error message locations
+        errorMsg = err.response.data.error || 
+                  err.response.data.message || 
+                  err.response.data.response ||
+                  JSON.stringify(err.response.data);
+      } else if (err.message?.includes('rejected')) {
         errorMsg = 'Authorization rejected. Please approve the signature in MetaMask to continue.';
       } else if (err.message?.includes('chain switch')) {
         errorMsg = err.message;
       } else if (err.message) {
         errorMsg = err.message;
       }
+      
+      console.log('Extracted error message:', errorMsg);
       
       setError(errorMsg);
       setStatus('needsAuthorization');

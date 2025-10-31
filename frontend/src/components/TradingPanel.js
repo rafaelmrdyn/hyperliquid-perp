@@ -105,31 +105,42 @@ function TradingPanel({ market, account }) {
       
       console.log('Order result:', result);
       
-      if (result.status === 'ok') {
-        setSuccess(`✅ Order placed successfully! ${orderType.toUpperCase()} ${formattedSize} ${market.name} @ $${formattedPrice}`);
-        setPrice('');
-        setSize('');
-      } else {
-        // Show detailed error from Hyperliquid
-        const errorMsg = result.response || 'Failed to place order';
-        
-        // Check for common errors and provide helpful messages
-        if (errorMsg.includes('does not exist')) {
-          setError(
-            `❌ Wallet Not Registered: Your wallet (${account.substring(0, 6)}...${account.substring(account.length - 4)}) is not registered on Hyperliquid. ` +
-            `Please visit https://app.hyperliquid.xyz to register and deposit funds first.`
-          );
-        } else if (errorMsg.includes('insufficient')) {
-          setError(`❌ Insufficient Funds: ${errorMsg}`);
-        } else if (errorMsg.includes('signature')) {
-          setError(`❌ Signature Error: ${errorMsg}`);
-        } else {
-          setError(`❌ ${errorMsg}`);
-        }
-      }
+      setSuccess(`✅ Order placed successfully! ${orderType.toUpperCase()} ${formattedSize} ${market.name} @ $${formattedPrice}`);
+      setPrice('');
+      setSize('');
     } catch (err) {
       console.error('Error placing order:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to place order');
+      console.error('Error response:', err.response);
+      console.error('Error response data:', err.response?.data);
+      
+      // Extract error message from backend response (try multiple paths)
+      let errorMessage = 'Failed to place order';
+      
+      if (err.response?.data) {
+        // Try different possible error message locations (check error first since backend uses that field)
+        errorMessage = err.response.data.error || 
+                      err.response.data.message || 
+                      err.response.data.response ||
+                      JSON.stringify(err.response.data);
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      console.log('Extracted error message:', errorMessage);
+      
+      // Check for common errors
+      if (errorMessage.includes('does not exist')) {
+        setError(
+          `❌ Wallet Not Registered: Your wallet is not registered on Hyperliquid. ` +
+          `Please visit https://app.hyperliquid.xyz to register and deposit funds first.`
+        );
+      } else if (errorMessage.includes('Must deposit') || errorMessage.includes('deposit before')) {
+        setError(`❌ ${errorMessage}`);
+      } else if (errorMessage.includes('insufficient')) {
+        setError(`❌ Insufficient Funds: ${errorMessage}`);
+      } else {
+        setError(`❌ ${errorMessage}`);
+      }
     } finally {
       setLoading(false);
     }

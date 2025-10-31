@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = process.env.HYPERLIQUID_API_URL || 'https://api-ui.hyperliquid.xyz';
+const BASE_URL = process.env.HYPERLIQUID_API_URL || 'https://api.hyperliquid.xyz';
 
 /**
  * Get all market information including meta and asset contexts

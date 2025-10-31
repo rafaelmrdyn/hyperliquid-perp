@@ -32,7 +32,10 @@ router.post('/order', async (req, res) => {
     res.json({ status: 'ok', response: result });
   } catch (error) {
     console.error('Order placement error:', error.message || error);
-    res.status(500).json({ 
+    
+    // Return 400 for user errors (better for frontend to display)
+    res.status(400).json({ 
+      status: 'err',
       error: 'Failed to place order', 
       message: error.message || 'Unknown error'
     });
